@@ -20,3 +20,15 @@ def frame_diff(first_roi, second_roi):
 
 def frame_preprocess(frame_ref):
     return cv2.cvtColor(frame_ref, cv2.COLOR_BGR2RGB)
+
+
+
+def process_roi(frame, prev_frame, roi_points):
+    for points in roi_points:
+        x1, y1 = points['x2'], points['y2']
+        x4, y4 = points['x3'], points['y4']
+        prev_roi_region = prev_frame[y1:y4, x1:x4]
+        frame_roi_region = frame[y1:y4, x1:x4]
+        diff_im = frame_diff(frame_preprocess(prev_roi_region), frame_preprocess(frame_roi_region))
+        frame[y1:y4, x1:x4] = diff_im
+    return frame
