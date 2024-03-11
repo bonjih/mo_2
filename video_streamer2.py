@@ -7,7 +7,7 @@ from queue import Queue
 
 
 class VideoStream:
-    def __init__(self, cam_name, path, transform=None, queue_size=128):
+    def __init__(self, cam_name, path, roi_points, transform=None, queue_size=128):
         self.cam_name = cam_name
         self.path = path
         self.stream = cv2.VideoCapture()
@@ -17,6 +17,7 @@ class VideoStream:
         self.Q = Queue(maxsize=self.queue_size)
         self.frame_queue = Queue(maxsize=1)  # Queue for storing frames to be displayed
         self.prev_frame = None
+        self.roi_points = roi_points  # Pass roi_points to the VideoStream instance
         self.thread_read = Thread(target=self.read_frames, args=())
         self.thread_display = Thread(target=self.display_frames, args=())
         self.thread_check_stream = Thread(target=self.check_stream, args=())
@@ -25,6 +26,8 @@ class VideoStream:
         self.thread_check_stream.daemon = True
 
     def start(self):
+        self.stream.open(self.path)  # Open the video stream
+        _, self.prev_frame = self.stream.read()  # Read and store the first frame
         self.thread_read.start()
         self.thread_display.start()
         self.thread_check_stream.start()
@@ -41,10 +44,11 @@ class VideoStream:
                     continue
 
                 if self.transform:
-                    frame = self.transform(frame, self.prev_frame)
+                    frame = self.transform(frame, self.prev_frame, self.roi_points)  # Pass roi_points here
 
                 self.Q.put(frame)
-                self.prev_frame = frame  # Update previous frame
+                self.prev_frame = frame  # Store the previous frame
+
             else:
                 time.sleep(0.1)
 
@@ -84,27 +88,3 @@ class VideoStream:
         self.thread_read.join()
         self.thread_display.join()
         self.thread_check_stream.join()
-
-
-# Example usage:
-def transform_frame(current_frame, prev_frame):
-
-    return cv2.cvtColor(current_frame, cv2.COLOR_BGR2GRAY)
-
-
-# Define the path to your video file
-# video_path = r"C:\Users\hamibenb\Desktop\Crusher\Carryback\(10.114.237.110) - TV401A PC1 ROM North-2023.11.28-13.00.00-30m00s.mkv"
-
-
-# vs = VideoStream(cam_name="Video Stream", path=video_path, transform=transform_frame)
-# vs.start()
-
-
-# while True:
-#     if not vs.running():
-#         break
-
-#     vs.show_frame()
-
-# vs.stop()
-# cv2.destroyAllWindows()
