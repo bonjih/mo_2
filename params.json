@@ -1,0 +1,22 @@
+{
+    "input_video_path": "data/test_day_video.mkv",
+    "output_video_dir": "videos/",
+    "output_image_dir": "images/",
+    "output_df_path": "df/data_dump.parquet",
+    "daytime": false,
+    "process_seconds": 100,
+
+    "roi_1": {
+        "x1": 600,
+        "y1": 600,
+        "x2": 600,
+        "y2": 100,
+        "x3": 1100,
+        "y3": 400,
+        "x4": 1100,
+        "y4": 600
+    }
+
+
+
+      }
