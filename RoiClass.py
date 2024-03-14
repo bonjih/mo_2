@@ -7,6 +7,10 @@ class ROI:
 
 
 class ComposeROI:
+    """
+    calls a json file, iterates over all ROI's.
+    ROI key must start with roi
+    """
     def __init__(self, json_file):
         self.rois = []
         with open(json_file, 'r') as f:
