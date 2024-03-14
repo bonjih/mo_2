@@ -1,16 +1,18 @@
+import time
 import cv2
 import numpy as np
 
-from other import frame_preprocess, frame_diff
+from thresh import process_roi
 
 
 class VideoPlayer:
-    def __init__(self, video_file, composition):
+    def __init__(self, video_file, roi_comp):
         self.video_file = video_file
-        self.composition = composition
+        self.roi_comp = roi_comp
+        self.timestamps = []
 
     def run(self):
-        prev_frame = None
+
         cap = cv2.VideoCapture(self.video_file)
 
         if not cap.isOpened():
@@ -18,42 +20,28 @@ class VideoPlayer:
             return
 
         while True:
+            _, prev_frame = cap.read()
+            prev_timestamp = time.time()
+            self.timestamps.append(prev_timestamp)
+
             ret, frame = cap.read()
             if not ret:
                 break
 
-            if prev_frame is None:
-                prev_frame = frame
-                continue
+            processed_frame = process_roi(self.roi_comp, prev_frame, frame)
 
-            for roi in self.composition:
-                points = roi.points
+            current_time_stamp = time.time()
+            frame_time_diff = current_time_stamp - prev_timestamp
+            self.timestamps.append(frame_time_diff)
+            # print(np.cumsum(self.timestamps))
 
-                x1, y1 = points['x2'], points['y2']
-                x4, y4 = points['x3'], points['y4']
-                prev_roi_region = prev_frame[y1:y4, x1:x4]
-
-                # Extracting the specific region from the current frame
-                frame_roi_region = frame[y1:y4, x1:x4]
-
-                # Process ROI
-                diff_im = frame_diff(frame_preprocess(prev_roi_region), frame_preprocess(frame_roi_region))
-
-                pts = np.array([(points['x1'], points['y1']),
-                                (points['x2'], points['y2']),
-                                (points['x3'], points['y3']),
-                                (points['x4'], points['y4'])], np.int32)
-                pts = pts.reshape((-1, 1, 2))
-                #cv2.polylines(frame, [pts], True, (0, 255, 0), 2)
-
-                # Overlay processed ROI on the frame
-                frame[y1:y4, x1:x4] = diff_im
-
-            cv2.imshow('Video', frame)
+            cv2.imshow('Video', processed_frame )
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
-            prev_frame = frame.copy()
-
         cap.release()
         cv2.destroyAllWindows()
+
+    def make_timestamp(self):
+        cum_ts = np.cumsum(self.timestamps)
+        return cum_ts
